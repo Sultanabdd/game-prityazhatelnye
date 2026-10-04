@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Космические Словечки — Притяжательные Прилагательные</title>
+  
+  <!-- Matter.js Physics Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+
+  <!-- Google Fonts: Nunito & Fredoka for playful, ultra-readable kids UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900;1000&family=Rubik:wght@700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #09081a;
+      --accent-purple: #7928ca;
+      --accent-pink: #ff0080;
+      --accent-cyan: #00dfd8;
+      --accent-yellow: #ffb800;
+      --accent-green: #00d084;
+      --accent-red: #ff4757;
+      --font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #08071a;
+      font-family: var(--font-family);
+      color: #fff;
+    }
+
+    /* Game Canvas Container */
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Cosmic Background Image with Soft Nebula Overlay */
+    .bg-nebula {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background: #09051c url('assets/space_bg.png') no-repeat center center / cover;
+      overflow: hidden;
+      filter: brightness(0.68) saturate(1.08);
+    }
+
+    .bg-nebula::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(9, 6, 22, 0.22) 0%, rgba(5, 3, 14, 0.55) 100%);
+      pointer-events: none;
+    }
+
+    /* UI Overlay Layer */
+    .ui-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: linear-gradient(180deg, rgba(8, 7, 26, 0.45) 0%, rgba(8, 7, 26, 0) 14%);
+    }
+
+    /* Header Bar */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: auto;
+      width: 100%;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(25, 20, 55, 0.75);
+      border: 2px solid rgba(255, 215, 0, 0.4);
+      box-shadow: 0 4px 20px rgba(255, 184, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 8px 16px;
+      border-radius: 40px;
+      color: #fff;
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .ui-icon-img {
+      display: inline-block;
+      vertical-align: middle;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .star-icon {
+      width: 28px;
+      height: 28px;
+      animation: starPulse 2.5s ease-in-out infinite;
+      filter: drop-shadow(0 2px 8px rgba(255, 184, 0, 0.7));
+    }
+
+    .target-icon {
+      width: 25px;
+      height: 25px;
+      filter: drop-shadow(0 2px 6px rgba(255, 60, 60, 0.5));
+    }
+
+    .help-icon {
+      width: 24px;
+      height: 24px;
+      filter: drop-shadow(0 2px 6px rgba(255, 209, 102, 0.6));
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .icon-btn:hover .help-icon {
+      transform: scale(1.15) rotate(5deg);
+    }
+
+    .refresh-icon {
+      width: 26px;
+      height: 26px;
+      filter: drop-shadow(0 2px 8px rgba(0, 223, 216, 0.75));
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .icon-btn:hover .refresh-icon {
+      transform: rotate(90deg) scale(1.15);
+    }
+
+    .refresh-icon.spin-anim {
+      animation: spinRefresh 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes spinRefresh {
+      0% { transform: rotate(0deg) scale(0.95); }
+      50% { transform: rotate(180deg) scale(1.22); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    @keyframes starPulse {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.12) rotate(8deg); }
+    }
+
+    .score-num {
+      color: #ffd166;
+      font-size: 20px;
+      min-width: 32px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .progress-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(25, 20, 55, 0.75);
+      border: 2px solid rgba(0, 223, 216, 0.35);
+      box-shadow: 0 4px 20px rgba(0, 223, 216, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 8px 16px;
+      border-radius: 40px;
+      font-weight: 800;
+      font-size: 15px;
+      color: #00dfd8;
+    }
+
+    .mode-pill-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #7928ca, #4338ca);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 15px rgba(121, 40, 202, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 8px 16px;
+      border-radius: 40px;
+      font-family: 'Rubik', sans-serif;
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+
+    .mode-pill-btn:hover {
+      transform: scale(1.05);
+      border-color: #00dfd8;
+      box-shadow: 0 6px 20px rgba(0, 223, 216, 0.4);
+    }
+
+    .mode-pill-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Tactile Kid-Friendly Buttons */
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(30, 25, 65, 0.85);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s;
+    }
+
+    .icon-btn:hover {
+      transform: scale(1.1);
+      border-color: #00dfd8;
+      background: rgba(45, 35, 95, 0.9);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Central Kitten Interaction Bubble (Tooltip hint) */
+    .kitty-speech {
+      position: absolute;
+      top: calc(50% - 130px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffff;
+      color: #1a163a;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-weight: 900;
+      font-size: 14px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      white-space: nowrap;
+      z-index: 15;
+    }
+
+    .kitty-speech::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 8px 8px 0;
+      border-style: solid;
+      border-color: #ffffff transparent;
+      display: block;
+      width: 0;
+    }
+
+    .kitty-speech.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-6px);
+    }
+
+    /* Interactive Question Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 3, 14, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease-out;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: linear-gradient(165deg, rgba(32, 25, 70, 0.95) 0%, rgba(18, 14, 42, 0.98) 100%);
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(121, 40, 202, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      border-radius: 36px;
+      width: 100%;
+      max-width: 520px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      transform: scale(0.85) translateY(20px);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 71, 87, 0.8);
+      transform: scale(1.1) rotate(90deg);
+      border-color: #ff4757;
+    }
+
+    /* Modal Asset Preview */
+    .asset-preview-wrap {
+      position: relative;
+      width: 190px;
+      height: 190px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .asset-bubble-glow {
+      position: absolute;
+      inset: -12px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(121, 40, 202, 0.3) 0%, rgba(0, 223, 216, 0.15) 50%, transparent 75%);
+      animation: bubbleAura 3s infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes bubbleAura {
+      from { transform: scale(0.96); opacity: 0.5; }
+      to { transform: scale(1.08); opacity: 0.85; }
+    }
+
+    .asset-img-frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .asset-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.65));
+      transform: scale(1);
+      transition: transform 0.3s ease;
+    }
+
+    .asset-emoji-fallback {
+      font-size: 85px;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.5));
+    }
+
+    .glass-glare {
+      display: none;
+    }
+
+
+
+    /* Question Box */
+    .question-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .question-text {
+      font-family: 'Rubik', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+
+    .question-highlight {
+      color: #00dfd8;
+      text-shadow: 0 0 12px rgba(0, 223, 216, 0.6);
+      background: rgba(0, 223, 216, 0.15);
+      padding: 2px 10px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+
+    .speak-repeat-btn {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7928ca, #ff0080);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 15px rgba(255, 0, 128, 0.4);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .speak-repeat-btn:hover {
+      transform: scale(1.15) rotate(-10deg);
+    }
+
+    .speak-repeat-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Answers Grid */
+    .answers-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    /* Chunky 3D Arcade Buttons */
+    .answer-btn {
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 20px;
+      font-family: 'Rubik', sans-serif;
+      font-size: 21px;
+      font-weight: 900;
+      color: #ffffff;
+      background: linear-gradient(180deg, #372b7a 0%, #251d54 100%);
+      border: none;
+      outline: none;
+      box-shadow: 0 6px 0 #181238, 0 10px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .answer-btn:hover {
+      background: linear-gradient(180deg, #46379c 0%, #2f256b 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 #181238, 0 14px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .answer-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #181238, 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Button States */
+    .answer-btn.correct {
+      background: linear-gradient(180deg, #00d084 0%, #009d62 100%) !important;
+      box-shadow: 0 6px 0 #006640, 0 0 30px rgba(0, 208, 132, 0.7) !important;
+      color: #fff !important;
+      transform: scale(1.03);
+    }
+
+    .answer-btn.wrong {
+      background: linear-gradient(180deg, #ff4757 0%, #c82333 100%) !important;
+      box-shadow: 0 6px 0 #8b131e, 0 0 25px rgba(255, 71, 87, 0.5) !important;
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-12px); }
+      40%, 80% { transform: translateX(12px); }
+    }
+
+    /* Modal Feedback Toast */
+    .feedback-message {
+      margin-top: 14px;
+      font-size: 18px;
+      font-weight: 900;
+      min-height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .feedback-message.correct-text {
+      color: #00d084;
+      text-shadow: 0 0 10px rgba(0, 208, 132, 0.5);
+    }
+
+    .feedback-message.wrong-text {
+      color: #ff6b81;
+      text-shadow: 0 0 10px rgba(255, 107, 129, 0.5);
+    }
+
+    /* Floating Score Popup (+10 ⭐) */
+    .floating-points {
+      position: absolute;
+      font-family: 'Rubik', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      color: #ffd166;
+      text-shadow: 0 2px 10px rgba(255, 209, 102, 0.8);
+      pointer-events: none;
+      z-index: 200;
+      animation: floatUpPoints 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+
+    @keyframes floatUpPoints {
+      0% { opacity: 0; transform: translateY(0) scale(0.5); }
+      20% { opacity: 1; transform: translateY(-20px) scale(1.3); }
+      80% { opacity: 1; transform: translateY(-70px) scale(1.1); }
+      100% { opacity: 0; transform: translateY(-110px) scale(0.8); }
+    }
+
+    /* Win Celebration Modal */
+    .win-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 3, 18, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 250;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .win-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .win-card {
+      background: linear-gradient(165deg, #2b1f66 0%, #150f38 100%);
+      border: 4px solid #ffd166;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 50px rgba(255, 209, 102, 0.4);
+      border-radius: 40px;
+      padding: 40px 30px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: scale(0.8);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .win-overlay.active .win-card {
+      transform: scale(1);
+    }
+
+    .trophy-bounce {
+      font-size: 80px;
+      animation: trophyBounce 1.5s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px #ffd166);
+      margin-bottom: 10px;
+    }
+
+    @keyframes trophyBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-15px) scale(1.1); }
+    }
+
+    .win-title {
+      font-family: 'Rubik', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #fff 0%, #ffd166 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+
+    .win-desc {
+      font-size: 17px;
+      color: #d1ccf0;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .restart-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 36px;
+      font-family: 'Rubik', sans-serif;
+      font-size: 20px;
+      font-weight: 900;
+      color: #120e2e;
+      background: linear-gradient(135deg, #ffd166 0%, #ff9f1c 100%);
+      border: none;
+      border-radius: 30px;
+      box-shadow: 0 8px 24px rgba(255, 159, 28, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .restart-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 12px 30px rgba(255, 159, 28, 0.6);
+    }
+
+    /* Therapist Info Modal */
+    .info-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 4, 18, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 120;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .info-modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .info-card {
+      background: #1c1642;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 28px;
+      max-width: 500px;
+      width: 100%;
+      padding: 24px;
+      position: relative;
+      color: #e2f1ff;
+      line-height: 1.6;
+    }
+
+    .info-card h3 {
+      font-family: 'Rubik', sans-serif;
+      color: #ffd166;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .info-card ul {
+      margin-left: 20px;
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+
+    /* Responsive Queries */
+    @media (max-width: 600px) {
+      .ui-layer {
+        padding: 10px 12px;
+      }
+      .star-icon {
+        width: 22px;
+        height: 22px;
+      }
+      .target-icon {
+        width: 20px;
+        height: 20px;
+      }
+      .help-icon {
+        width: 20px;
+        height: 20px;
+      }
+      .refresh-icon {
+        width: 21px;
+        height: 21px;
+      }
+      .stat-badge {
+        padding: 6px 12px;
+        font-size: 15px;
+      }
+      .progress-pill {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+      .mode-pill-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      .modal-card {
+        padding: 20px 16px;
+        border-radius: 28px;
+      }
+      .asset-preview-wrap {
+        width: 130px;
+        height: 130px;
+      }
+      .question-text {
+        font-size: 19px;
+      }
+      .answer-btn {
+        font-size: 18px;
+        padding: 14px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Animated Nebulas -->
+  <div class="bg-nebula"></div>
+
+  <!-- Interactive Matter.js Canvas -->
+  <div id="canvas-container">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <!-- UI Overlay -->
+  <div class="ui-layer">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="stat-badge">
+          <img src="assets/icon_star.png" class="ui-icon-img star-icon" alt="Баллы">
+          <span id="score-display" class="score-num">0</span>
+        </div>
+
+        <div class="progress-pill">
+          <img src="assets/icon_target.png" class="ui-icon-img target-icon" alt="Цель">
+          <span id="progress-display">0 / 24</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="btn-mode" class="mode-pill-btn" title="Переключить режим: все 24 или по очереди">🌌 Все 24 картинки</button>
+        <button id="btn-shuffle" class="icon-btn" title="Перемешать пузыри" aria-label="Перемешать">
+          <img src="assets/icon_refresh.png" class="ui-icon-img refresh-icon" alt="Перемешать">
+        </button>
+        <button id="btn-help" class="icon-btn" title="Инструкция" aria-label="Инструкция">
+          <img src="assets/icon_help.png" class="ui-icon-img help-icon" alt="Инструкция">
+        </button>
+      </div>
+    </header>
+
+    <!-- Kitten speech bubble disabled as requested -->
+    <div id="kittySpeech" class="kitty-speech" style="display: none !important;"></div>
+  </div>
+
+  <!-- Interactive Question Modal -->
+  <div id="questionModal" class="modal-overlay">
+    <div class="modal-card">
+      <button id="modalCloseBtn" class="close-btn" aria-label="Закрыть">✕</button>
+
+      <!-- Asset Image in Bubble -->
+      <div class="asset-preview-wrap">
+        <div class="asset-bubble-glow"></div>
+        <div class="asset-img-frame">
+          <img id="modalAssetImg" class="asset-img" src="" alt="Предмет" style="display: none;">
+          <div id="modalEmojiFallback" class="asset-emoji-fallback">🦊</div>
+          <div class="glass-glare"></div>
+        </div>
+      </div>
+
+      <!-- Question -->
+      <div class="question-box">
+        <h2 id="modalQuestionText" class="question-text">
+          Хвост лисы — <span class="question-highlight">чей он?</span>
+        </h2>
+      </div>
+
+      <!-- 3 Answer Buttons -->
+      <div id="modalAnswersGrid" class="answers-grid">
+        <!-- Buttons injected dynamically -->
+      </div>
+
+      <!-- Feedback / Result Text -->
+      <div id="modalFeedback" class="feedback-message"></div>
+    </div>
+  </div>
+
+  <!-- Win Celebration Modal -->
+  <div id="winModal" class="win-overlay">
+    <div class="win-card">
+      <div class="trophy-bounce">🏆</div>
+      <h2 class="win-title">Космический Успех!</h2>
+      <p class="win-desc">Ура! Ты изучил все 24 притяжательных прилагательных! Котёнок-космонавт очень гордится твоими успехами! 🚀🐾</p>
+      <button id="btnRestart" class="restart-btn">
+        <img src="assets/icon_refresh.png" class="ui-icon-img" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 6px rgba(0, 223, 216, 0.6));" alt="">
+        Играть снова! ⭐
+      </button>
+    </div>
+  </div>
+
+  <!-- Instruction Guide Modal -->
+  <div id="helpModal" class="info-modal">
+    <div class="info-card">
+      <button id="helpCloseBtn" class="close-btn" style="top:12px; right:12px;">✕</button>
+      <h3>Инструкция</h3>
+      <p>Помоги котёнку-космонавту изучить все предметы в космосе:</p>
+      <ul style="margin-top: 10px;">
+        <li><b>Лови предметы:</b> нажимай на летающие в невесомости картинки (их также можно двигать и перетаскивать).</li>
+        <li><b>Отвечай на вопрос:</b> прочитай или послушай вопрос (например, <i>«Хвост лисы — чей он?»</i>) и нажми правильный вариант ответа.</li>
+        <li><b>Получай звёздочки:</b> за каждый верный ответ ты получаешь ⭐ звёздочку, а изученный предмет улетает!</li>
+        <li><b>Исправляй ошибки:</b> если ответ неверный, игра подскажет ошибку — можно сразу попробовать ещё раз.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Game Logic Script -->
+  <script>
+  (function() {
+    'use strict';
+
+    /* ==========================================================================
+       1. DATABASE OF 24 SPEECH THERAPY CARDS
+       ========================================================================== */
+    const CARDS_DATA = [
+      {
+        id: 1,
+        item: "Хвост лисы",
+        question: "Хвост лисы — чей он?",
+        qWord: "чей он?",
+        answer: "Лисий",
+        options: ["Лисий", "Лисиный", "Лисовый"],
+        assetFile: "assets/Orange_fox_tail_icon_20260912072052.png",
+        emoji: "🦊",
+        color: "#ff8438"
+      },
+      {
+        id: 2,
+        item: "Берлога медведя",
+        question: "Берлога медведя — чья она?",
+        qWord: "чья она?",
+        answer: "Медвежья",
+        options: ["Медвежья", "Медведева", "Медвединая"],
+        assetFile: "assets/Cartoon_bear_cave_den_20260912072052.png",
+        emoji: "🐻",
+        color: "#a06037"
+      },
+      {
+        id: 3,
+        item: "След волка",
+        question: "След волка — чей он?",
+        qWord: "чей он?",
+        answer: "Волчий",
+        options: ["Волчий", "Волковый", "Волчинский"],
+        assetFile: "assets/Cartoon_wolf_paw_print_trail_20260912072052.png",
+        emoji: "🐺",
+        color: "#7e889b"
+      },
+      {
+        id: 4,
+        item: "Уши зайца",
+        question: "Уши зайца — чьи они?",
+        qWord: "чьи они?",
+        answer: "Заячьи",
+        options: ["Заячьи", "Зайцевые", "Зайкины"],
+        assetFile: "assets/Fluffy_bunny_rabbit_ears_icon_20260912072052.png",
+        emoji: "🐰",
+        color: "#d598e8"
+      },
+      {
+        id: 5,
+        item: "Гнездо птицы",
+        question: "Гнездо птицы — чьё оно?",
+        qWord: "чьё оно?",
+        answer: "Птичье",
+        options: ["Птичье", "Птицыно", "Птичиное"],
+        assetFile: "assets/Bird_nest_with_blue_eggs_20260912072052.png",
+        emoji: "🪺",
+        color: "#38bdf8"
+      },
+      {
+        id: 6,
+        item: "Грива льва",
+        question: "Грива льва — чья она?",
+        qWord: "чья она?",
+        answer: "Львиная",
+        options: ["Львиная", "Львовая", "Львинаяся"],
+        assetFile: "assets/Cartoon_lion_mane_game_asset_20260912072052.png",
+        emoji: "🦁",
+        color: "#f59e0b"
+      },
+      {
+        id: 7,
+        item: "Молоко коровы",
+        question: "Молоко коровы — чьё оно?",
+        qWord: "чьё оно?",
+        answer: "Коровье",
+        options: ["Коровье", "Коровино", "Коровское"],
+        assetFile: "assets/Glass_bottle_of_cow_milk_20260912072052.png",
+        emoji: "🥛",
+        color: "#38bdf8"
+      },
+      {
+        id: 8,
+        item: "Перо орла",
+        question: "Перо орла — чьё оно?",
+        qWord: "чьё оно?",
+        answer: "Орлиное",
+        options: ["Орлиное", "Орлово", "Орлячье"],
+        assetFile: "assets/Eagle_feather_game_item_20260912072052.png",
+        emoji: "🪶",
+        color: "#a78bfa"
+      },
+      {
+        id: 9,
+        item: "Косточка собаки",
+        question: "Косточка собаки — чья она?",
+        qWord: "чья она?",
+        answer: "Собачья",
+        options: ["Собачья", "Собакина", "Собачевая"],
+        assetFile: "assets/Cartoon_dog_bone_with_collar_20260912072052.png",
+        emoji: "🦴",
+        color: "#f472b6"
+      },
+      {
+        id: 10,
+        item: "Усы кошки",
+        question: "Усы кошки — чьи они?",
+        qWord: "чьи они?",
+        answer: "Кошачьи",
+        options: ["Кошачьи", "Кошкины", "Котиные"],
+        assetFile: "assets/Cartoon_cat_face_icon_20260912072053.png",
+        emoji: "🐱",
+        color: "#fb923c"
+      },
+      {
+        id: 11,
+        item: "Дупло белки",
+        question: "Дупло белки — чьё оно?",
+        qWord: "чьё оно?",
+        answer: "Беличье",
+        options: ["Беличье", "Белкино", "Беличное"],
+        assetFile: "assets/Tree_trunk_hollow_with_acorns_20260912072053.png",
+        emoji: "🐿️",
+        color: "#e28743"
+      },
+      {
+        id: 12,
+        item: "Рога оленя",
+        question: "Рога оленя — чьи они?",
+        qWord: "чьи они?",
+        answer: "Оленьи",
+        options: ["Оленьи", "Оленевые", "Оленьские"],
+        assetFile: "assets/Cartoon_deer_antlers_3D_icon_20260912072052.png",
+        emoji: "🦌",
+        color: "#c084fc"
+      },
+      {
+        id: 13,
+        item: "Хвост бобра",
+        question: "Хвост бобра — чей он?",
+        qWord: "чей он?",
+        answer: "Бобровый",
+        options: ["Бобровый", "Бобрячий", "Бобриный"],
+        assetFile: "assets/Cartoon_beaver_tail_game_icon_20260912072053.png",
+        emoji: "🦫",
+        color: "#92400e"
+      },
+      {
+        id: 14,
+        item: "Панцирь черепахи",
+        question: "Панцирь черепахи — чей он?",
+        qWord: "чей он?",
+        answer: "Черепаший",
+        options: ["Черепаший", "Черепаховый", "Черепахин"],
+        assetFile: "assets/Green_cartoon_turtle_shell_asset_20260912072053.png",
+        emoji: "🐢",
+        color: "#10b981"
+      },
+      {
+        id: 15,
+        item: "Гребешок петуха",
+        question: "Гребешок петуха — чей он?",
+        qWord: "чей он?",
+        answer: "Петушиный",
+        options: ["Петушиный", "Петуховый", "Петуший"],
+        assetFile: "assets/Rooster_comb_and_wattle_20260912072052.png",
+        emoji: "🐓",
+        color: "#ef4444"
+      },
+      {
+        id: 16,
+        item: "Клюв утки",
+        question: "Клюв утки — чей он?",
+        qWord: "чей он?",
+        answer: "Утиный",
+        options: ["Утиный", "Уточий", "Уткин"],
+        assetFile: "assets/Orange_duck_beak_3D_asset_20260912072052.png",
+        emoji: "🦆",
+        color: "#f97316"
+      },
+      {
+        id: 17,
+        item: "Горб верблюда",
+        question: "Горб верблюда — чей он?",
+        qWord: "чей он?",
+        answer: "Верблюжий",
+        options: ["Верблюжий", "Верблюдовый", "Верблюжачий"],
+        assetFile: "assets/Cartoon_camel_with_two_humps_20260912072053.png",
+        emoji: "🐪",
+        color: "#eab308"
+      },
+      {
+        id: 18,
+        item: "Норка мыши",
+        question: "Норка мыши — чья она?",
+        qWord: "чья она?",
+        answer: "Мышиная",
+        options: ["Мышиная", "Мышья", "Мышкина"],
+        assetFile: "assets/Cartoon_mouse_hole_with_cheese_20260912072053.png",
+        emoji: "🐭",
+        color: "#94a3b8"
+      },
+      {
+        id: 19,
+        item: "Лапки лягушки",
+        question: "Лапки лягушки — чьи они?",
+        qWord: "чьи они?",
+        answer: "Лягушачьи",
+        options: ["Лягушачьи", "Лягушкины", "Лягушатные"],
+        assetFile: "assets/Frog_webbed_feet_icon_20260912072053.png",
+        emoji: "🐸",
+        color: "#22c55e"
+      },
+      {
+        id: 20,
+        item: "Мёд пчелы",
+        question: "Мёд пчелы — чей он?",
+        qWord: "чей он?",
+        answer: "Пчелиный",
+        options: ["Пчелиный", "Пчеловый", "Пчелий"],
+        assetFile: "assets/Honeycomb_dripping_honey_20260912072053.png",
+        emoji: "🍯",
+        color: "#f59e0b"
+      },
+      {
+        id: 21,
+        item: "Хвост рыбы",
+        question: "Хвост рыбы — чей он?",
+        qWord: "чей он?",
+        answer: "Рыбий",
+        options: ["Рыбий", "Рыбный", "Рыбачий"],
+        assetFile: "assets/Turquoise_and_golden_fish_fin_20260912072052.png",
+        emoji: "🐟",
+        color: "#06b6d4"
+      },
+      {
+        id: 22,
+        item: "Пятачок свиньи",
+        question: "Пятачок свиньи — чей он?",
+        qWord: "чей он?",
+        answer: "Свиной",
+        options: ["Свиной", "Свинячий", "Свинский"],
+        assetFile: "assets/Pink_cartoon_pig_snout_20260912072052.png",
+        emoji: "🐷",
+        color: "#f472b6"
+      },
+      {
+        id: 23,
+        item: "Копыто лошади",
+        question: "Копыто лошади — чьё оно?",
+        qWord: "чьё оно?",
+        answer: "Лошадиное",
+        options: ["Лошадиное", "Лошажье", "Лошадино"],
+        assetFile: "assets/Horse_hoof_wearing_silver_horseshoe_20260912072053.png",
+        emoji: "🐴",
+        color: "#9ca3af"
+      },
+      {
+        id: 24,
+        item: "Глаза совы",
+        question: "Глаза совы — чьи они?",
+        qWord: "чьи они?",
+        answer: "Совиные",
+        options: ["Совиные", "Совьи", "Совиньи"],
+        assetFile: "assets/Yellow_cartoon_owl_eyes_20260912072053.png",
+        emoji: "🦉",
+        color: "#eab308"
+      }
+    ];
+
+    /* ==========================================================================
+       2. GAME STATE & AUDIO SYNTHESIZER
+       ========================================================================== */
+    const state = {
+      score: 0,
+      completedSet: new Set(),
+      soundEnabled: false,
+      activeModalCard: null,
+      bubbles: [],
+      kittyReaction: "idle", // "idle", "happy", "repelling", "wink"
+      kittyTimer: 0,
+      imagesCache: new Map(),
+      starsBackground: [],
+      viewMode: 'all', // 'all' (all 24 pictures floating) or 'batch' (12 cards with dynamic replenishment)
+    };
+
+    // Preload & resolve candidate images
+    CARDS_DATA.forEach(card => {
+      const img = new Image();
+      const numStr = String(card.id).padStart(2, '0');
+      const candidates = [
+        card.assetFile,
+        `zapi-img/${numStr}.png`,
+        `zapi-img/${numStr}.webp`,
+        `zapi-img/${numStr}.png`
+      ];
+
+      let candidateIndex = 0;
+      function tryNext() {
+        if (candidateIndex < candidates.length) {
+          img.src = candidates[candidateIndex++];
+        } else {
+          card.loaded = false; // fallback to emoji
+        }
+      }
+
+      img.onload = () => {
+        card.loaded = true;
+        card.imageElement = img;
+      };
+      img.onerror = () => {
+        tryNext();
+      };
+      tryNext();
+    });
+
+    // Web Audio Synthesizer (Zero External Dependencies)
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    const Sound = {
+      pop() {
+        if (!state.soundEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.09);
+      },
+
+      correct() {
+        if (!state.soundEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, index) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const startTime = ctx.currentTime + index * 0.08;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0.28, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.36);
+        });
+      },
+
+      wrong() {
+        if (!state.soundEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.26);
+      },
+
+      whoosh() {
+        if (!state.soundEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.16);
+      },
+
+      purr() {
+        if (!state.soundEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(750, ctx.currentTime + 0.1);
+        osc.frequency.linearRampToValueAtTime(500, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.26);
+      }
+    };
+
+    /* ==========================================================================
+       3. AUDIO INSTRUCTIONS REMOVED (Web Speech disabled as requested)
+       ========================================================================== */
+    function speakText(text, onEnd) {
+      if (onEnd) setTimeout(onEnd, 50);
+      return;
+    }
+
+    // Preload transparent space kitten image
+    const catAstronautImg = new Image();
+    catAstronautImg.src = 'assets/cat_astronaut.png';
+    let catAstronautLoaded = false;
+    catAstronautImg.onload = () => { catAstronautLoaded = true; };
+
+    /* ==========================================================================
+       4. MATTER.JS PHYSICS & ENVIRONMENT SETUP
+       ========================================================================== */
+    const { Engine, World, Bodies, Body, Vector, Mouse, MouseConstraint } = Matter;
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const engine = Engine.create({
+      gravity: { x: 0, y: 0 } // Zero Gravity Anti-Gravity Physics
+    });
+
+    let walls = [];
+    function setupWalls() {
+      walls.forEach(wall => World.remove(engine.world, wall));
+      walls = [];
+      const thickness = 200;
+      const options = { isStatic: true, restitution: 1.0, friction: 0 };
+
+      // Top, Bottom, Left, Right (inset slightly to keep away from status bars)
+      const topWall = Bodies.rectangle(width / 2, 45 - thickness / 2, width * 2, thickness, options);
+      const bottomWall = Bodies.rectangle(width / 2, height - 40 + thickness / 2, width * 2, thickness, options);
+      const leftWall = Bodies.rectangle(-thickness / 2, height / 2, thickness, height * 2, options);
+      const rightWall = Bodies.rectangle(width + thickness / 2, height / 2, thickness, height * 2, options);
+
+      walls = [topWall, bottomWall, leftWall, rightWall];
+      World.add(engine.world, walls);
+    }
+    setupWalls();
+
+    // Generate Ambient Twinkling Stars
+    for (let i = 0; i < 90; i++) {
+      state.starsBackground.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 2 + 0.6,
+        alpha: Math.random() * 0.7 + 0.3,
+        twinkleSpeed: Math.random() * 0.03 + 0.01,
+        color: ['#ffffff', '#ffd166', '#00dfd8', '#ff9cd6'][Math.floor(Math.random() * 4)]
+      });
+    }
+
+    // Touch & Mouse Dragging via Matter.MouseConstraint
+    const mouse = Mouse.create(canvas);
+    const mouseConstraint = MouseConstraint.create(engine, {
+      mouse: mouse,
+      constraint: {
+        stiffness: 0.15,
+        damping: 0.1,
+        render: { visible: false }
+      }
+    });
+    World.add(engine.world, mouseConstraint);
+
+    // Track click vs drag
+    let pointerDownPos = { x: 0, y: 0 };
+    let pointerDownTime = 0;
+
+    canvas.addEventListener('pointerdown', (e) => {
+      getAudioContext();
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+      pointerDownTime = performance.now();
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+      const duration = performance.now() - pointerDownTime;
+
+      // Check if child tapped on the central astronaut kitten!
+      const catCenterX = width / 2;
+      const catCenterY = height / 2;
+      const catDist = Math.hypot(e.clientX - catCenterX, e.clientY - catCenterY);
+      const catHitRadius = width < 600 ? 95 : 120;
+      if (dist < 15 && catDist < catHitRadius) {
+        triggerKittenMeow();
+        return;
+      }
+
+      // If tap/short click on a bubble
+      if (dist < 12 && duration < 400) {
+        const bodies = state.bubbles.map(b => b.body);
+        const query = Matter.Query.point(bodies, { x: e.clientX, y: e.clientY });
+        if (query.length > 0) {
+          const clickedBody = query[0];
+          const bubbleObj = state.bubbles.find(b => b.body === clickedBody);
+          if (bubbleObj) {
+            openQuestionModal(bubbleObj);
+          }
+        }
+      }
+    });
+
+    /* ==========================================================================
+       5. SPAWN BUBBLES IN ANTI-GRAVITY SPACE (ALL 24 CARDS & REPLENISHMENT)
+       ========================================================================== */
+    function createSingleBubble(card, radius, fromEdge = false) {
+      const catCenterX = width / 2;
+      const catCenterY = height / 2;
+      const catForbiddenRadius = width < 600 ? 130 : 170;
+
+      let x, y;
+      if (fromEdge) {
+        const side = Math.floor(Math.random() * 4);
+        if (side === 0) { x = Math.random() * (width - 100) + 50; y = 70; }
+        else if (side === 1) { x = width - 60; y = Math.random() * (height - 120) + 60; }
+        else if (side === 2) { x = Math.random() * (width - 100) + 50; y = height - 70; }
+        else { x = 60; y = Math.random() * (height - 120) + 60; }
+      } else {
+        let tries = 0;
+        do {
+          const marginX = radius + 30;
+          const marginY = radius + 55;
+          x = marginX + Math.random() * (width - marginX * 2);
+          y = marginY + Math.random() * (height - marginY * 2);
+          tries++;
+        } while (Math.hypot(x - catCenterX, y - catCenterY) < catForbiddenRadius && tries < 60);
+      }
+
+      const body = Bodies.circle(x, y, radius, {
+        restitution: 0.95, // Highly elastic bounce
+        frictionAir: 0.003, // Low zero-g drag
+        friction: 0.01,
+        density: 0.001
+      });
+
+      // Gentle cosmic drift velocity
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.5 + Math.random() * 0.6;
+      Body.setVelocity(body, {
+        x: Math.cos(angle) * speed,
+        y: Math.sin(angle) * speed
+      });
+
+      World.add(engine.world, body);
+
+      const bubbleObj = {
+        body: body,
+        card: card,
+        radius: radius,
+        wobbleOffset: Math.random() * 100,
+        highlightGlow: 0,
+        isLeaving: false,
+        opacity: 1
+      };
+      state.bubbles.push(bubbleObj);
+      return bubbleObj;
+    }
+
+    function createBubbles() {
+      // Clear existing
+      state.bubbles.forEach(b => World.remove(engine.world, b.body));
+      state.bubbles = [];
+
+      const isMobile = width < 600;
+      const isTablet = width < 1000;
+
+      if (state.viewMode === 'all') {
+        // Floating cards: show uncompleted cards with compact, well-spaced size
+        const radius = isMobile ? 36 : (isTablet ? 42 : 48);
+        const uncompleted = CARDS_DATA.filter(c => !state.completedSet.has(c.id));
+        uncompleted.forEach(card => {
+          createSingleBubble(card, radius, false);
+        });
+      } else {
+        // Batch mode: 10-12 cards
+        const radius = isMobile ? 44 : (isTablet ? 52 : 60);
+        const uncompleted = CARDS_DATA.filter(c => !state.completedSet.has(c.id));
+        const pool = uncompleted.length >= 10 ? uncompleted : CARDS_DATA;
+        const shuffled = [...pool].sort(() => Math.random() - 0.5);
+        const count = isMobile ? 8 : 12;
+        shuffled.slice(0, count).forEach(card => {
+          createSingleBubble(card, radius, false);
+        });
+      }
+    }
+
+    function replenishBubble() {
+      if (state.viewMode === 'all') return;
+      const isMobile = width < 600;
+      const isTablet = width < 1000;
+      const radius = isMobile ? 44 : (isTablet ? 52 : 60);
+      const activeIds = new Set(state.bubbles.map(b => b.card.id));
+      const uncompletedUnused = CARDS_DATA.filter(c => !state.completedSet.has(c.id) && !activeIds.has(c.id));
+      const candidate = uncompletedUnused.length > 0 
+        ? uncompletedUnused[Math.floor(Math.random() * uncompletedUnused.length)] 
+        : CARDS_DATA.find(c => !activeIds.has(c.id));
+      if (candidate) {
+        createSingleBubble(candidate, radius, true);
+      }
+    }
+
+    createBubbles();
+
+    /* ==========================================================================
+       6. CENTRAL SPACE KITTEN CHARACTER & REPULSION FIELD
+       ========================================================================== */
+    function triggerKittenMeow() {
+      Sound.purr();
+      state.kittyReaction = "happy";
+      state.kittyTimer = 90;
+
+      // Confetti burst from kitten without text banner
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 25,
+          spread: 70,
+          origin: { x: 0.5, y: 0.5 },
+          colors: ['#ffd166', '#ff0080', '#00dfd8']
+        });
+      }
+    }
+
+    function showKittySpeech(text, duration = 2400) {
+      // Text bubbles over kitten completely removed as requested
+      const speechEl = document.getElementById('kittySpeech');
+      if (speechEl) {
+        speechEl.style.display = 'none';
+      }
+    }
+
+    // Draw the adorable Space Kitten in astronaut suit on Canvas
+    function drawSpaceKitten(time) {
+      const cx = width / 2;
+      const cy = height / 2;
+      // Gentle, serene floating motion without any sudden flickers or blinking
+      const floatY = Math.sin(time * 0.0018) * 8;
+      const floatRot = Math.sin(time * 0.0012) * 0.04;
+
+      ctx.save();
+      ctx.translate(cx, cy + floatY);
+      ctx.rotate(floatRot);
+
+      // Very soft, steady ambient glow around kitten in space
+      const glowRadius = width < 600 ? 115 : 145;
+      const glowGrad = ctx.createRadialGradient(0, 0, 35, 0, 0, glowRadius);
+      glowGrad.addColorStop(0, 'rgba(255, 215, 0, 0.15)');
+      glowGrad.addColorStop(0.6, 'rgba(121, 40, 202, 0.12)');
+      glowGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Steady kitten scale
+      let scale = 1;
+      if (state.kittyReaction === "happy") {
+        scale = 1.05 + Math.sin(time * 0.005) * 0.02;
+      }
+      ctx.scale(scale, scale);
+
+      if (catAstronautLoaded) {
+        // Draw the transparent cat astronaut significantly larger as the hero of the game!
+        const catW = width < 600 ? 195 : 245;
+        const catH = catW * (302 / 267);
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+        ctx.shadowBlur = 22;
+        ctx.shadowOffsetY = 8;
+        ctx.drawImage(catAstronautImg, -catW / 2, -catH / 2, catW, catH);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    /* ==========================================================================
+       7. ZERO-GRAVITY TICK & SOFT REPULSION PHYSICS
+       ========================================================================== */
+    function updatePhysics() {
+      const catCenterX = width / 2;
+      const catCenterY = height / 2;
+      const repulsionRadius = width < 600 ? 135 : 175;
+
+      let repelledAny = false;
+
+      state.bubbles.forEach(b => {
+        const pos = b.body.position;
+        const dx = pos.x - catCenterX;
+        const dy = pos.y - catCenterY;
+        const dist = Math.hypot(dx, dy);
+
+        // If bubble enters kitten's protected personal space bubble
+        if (dist < repulsionRadius && dist > 1) {
+          repelledAny = true;
+          const forceMag = (repulsionRadius - dist) * 0.00035;
+          const nx = dx / dist;
+          const ny = dy / dist;
+
+          Body.applyForce(b.body, pos, {
+            x: nx * forceMag,
+            y: ny * forceMag
+          });
+
+          b.highlightGlow = Math.min(1, b.highlightGlow + 0.1);
+        } else {
+          b.highlightGlow = Math.max(0, b.highlightGlow - 0.03);
+        }
+
+        // Ambient gentle drift: keep bubbles floating smoothly forever
+        const speed = Math.hypot(b.body.velocity.x, b.body.velocity.y);
+        if (speed < 0.3) {
+          const randAngle = Math.random() * Math.PI * 2;
+          Body.applyForce(b.body, pos, {
+            x: Math.cos(randAngle) * 0.00015,
+            y: Math.sin(randAngle) * 0.00015
+          });
+        } else if (speed > 4.5) {
+          // Soft speed limit
+          Body.setVelocity(b.body, {
+            x: b.body.velocity.x * 0.95,
+            y: b.body.velocity.y * 0.95
+          });
+        }
+      });
+
+      if (state.kittyTimer > 0) {
+        state.kittyTimer--;
+        if (state.kittyTimer <= 0) {
+          state.kittyReaction = "idle";
+        }
+      }
+
+      Engine.update(engine, 1000 / 60);
+    }
+
+    /* ==========================================================================
+       8. CUSTOM CANVAS RENDER LOOP (Bubbles, Stars, Neon Effects)
+       ========================================================================== */
+    function render(time) {
+      ctx.clearRect(0, 0, width, height);
+
+      // Render Twinkling Cosmic Stars
+      state.starsBackground.forEach(star => {
+        star.alpha += star.twinkleSpeed;
+        if (star.alpha > 1 || star.alpha < 0.2) star.twinkleSpeed = -star.twinkleSpeed;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.15, Math.min(1, star.alpha));
+        ctx.fillStyle = star.color;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Render Floating Space Kitten
+      drawSpaceKitten(time);
+
+      // Render Floating Bubbles
+      for (let i = state.bubbles.length - 1; i >= 0; i--) {
+        const b = state.bubbles[i];
+
+        if (b.isLeaving) {
+          b.opacity = (b.opacity !== undefined ? b.opacity : 1) - 0.045;
+          b.popScale = (b.popScale !== undefined ? b.popScale : 1) + 0.02;
+          if (b.opacity <= 0) {
+            World.remove(engine.world, b.body);
+            state.bubbles.splice(i, 1);
+            if (state.viewMode === 'batch') {
+              replenishBubble();
+            }
+            continue;
+          }
+        }
+
+        const { x, y } = b.body.position;
+        const r = b.radius;
+        const card = b.card;
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        if (b.popScale) {
+          ctx.scale(b.popScale, b.popScale);
+        }
+        if (b.opacity !== undefined && b.opacity < 1) {
+          ctx.globalAlpha = Math.max(0, b.opacity);
+        }
+
+        // Clean, borderless transparent 3D assets floating freely in deep space
+        if (card.loaded && card.imageElement) {
+          const img = card.imageElement;
+          const iw = img.naturalWidth || img.width || 1;
+          const ih = img.naturalHeight || img.height || 1;
+          const maxDim = Math.max(iw, ih);
+          // Scale slightly smaller to maintain comfortable spacing and breathing room
+          const targetSize = r * 2.05;
+          const drawW = (iw / maxDim) * targetSize;
+          const drawH = (ih / maxDim) * targetSize;
+
+          ctx.save();
+          // Natural soft cosmic depth shadow behind the floating 3D object
+          if (b.highlightGlow > 0) {
+            ctx.shadowColor = 'rgba(0, 223, 216, 0.75)';
+            ctx.shadowBlur = 20;
+          } else {
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+            ctx.shadowBlur = 16;
+            ctx.shadowOffsetY = 5;
+          }
+          ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+          ctx.restore();
+        } else {
+          // Fallback Emoji if image not yet loaded
+          ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+          ctx.shadowBlur = 10;
+          ctx.font = `${Math.floor(r * 1.1)}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(card.emoji || '✨', 0, 0);
+          ctx.restore();
+        }
+
+        ctx.restore();
+      }
+
+      updatePhysics();
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+
+    /* ==========================================================================
+       9. QUESTION MODAL & INTERACTION
+       ========================================================================== */
+    const modalOverlay = document.getElementById('questionModal');
+    const modalAssetImg = document.getElementById('modalAssetImg');
+    const modalEmojiFallback = document.getElementById('modalEmojiFallback');
+    const modalQuestionText = document.getElementById('modalQuestionText');
+    const modalAnswersGrid = document.getElementById('modalAnswersGrid');
+    const modalSpeakBtn = document.getElementById('modalSpeakBtn');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalFeedback = document.getElementById('modalFeedback');
+
+    function openQuestionModal(bubbleObj) {
+      Sound.pop();
+      const card = bubbleObj.card;
+      state.activeModalCard = card;
+
+      // Highlight Question Word (Чей он?, Чья она?, Чьё оно?, Чьи они?)
+      let qHtml = card.question;
+      if (card.qWord && qHtml.includes(card.qWord)) {
+        qHtml = qHtml.replace(card.qWord, `<span class="question-highlight">${card.qWord}</span>`);
+      }
+      modalQuestionText.innerHTML = qHtml;
+
+      // Handle Image Preview
+      if (card.loaded && card.imageElement) {
+        modalAssetImg.src = card.imageElement.src;
+        modalAssetImg.style.display = 'block';
+        modalEmojiFallback.style.display = 'none';
+      } else {
+        modalAssetImg.style.display = 'none';
+        modalEmojiFallback.textContent = card.emoji;
+        modalEmojiFallback.style.display = 'block';
+      }
+
+      // Build Answer Buttons
+      modalAnswersGrid.innerHTML = '';
+      modalFeedback.textContent = '';
+      modalFeedback.className = 'feedback-message';
+
+      // Shuffle options copy
+      const shuffledOptions = [...card.options].sort(() => Math.random() - 0.5);
+
+      shuffledOptions.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'answer-btn';
+        btn.textContent = opt;
+        btn.onclick = () => handleAnswerClick(btn, opt, card, bubbleObj);
+        modalAnswersGrid.appendChild(btn);
+      });
+
+      // Show Modal
+      modalOverlay.classList.add('active');
+
+      // Auto-speak question for speech therapy
+      speakText(card.question);
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('active');
+      state.activeModalCard = null;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    if (modalCloseBtn) {
+      modalCloseBtn.onclick = closeModal;
+    }
+    if (modalOverlay) {
+      modalOverlay.onclick = (e) => {
+        if (e.target === modalOverlay) closeModal();
+      };
+    }
+    if (modalSpeakBtn) {
+      modalSpeakBtn.onclick = () => {
+        if (state.activeModalCard) {
+          speakText(state.activeModalCard.question);
+        }
+      };
+    }
+
+    /* ==========================================================================
+       10. ANSWER CHECKING & CELEBRATIONS
+       ========================================================================== */
+    function handleAnswerClick(button, selectedText, card, bubbleObj) {
+      const isCorrect = selectedText.trim().toLowerCase() === card.answer.trim().toLowerCase();
+
+      if (isCorrect) {
+        // Correct Choice!
+        Sound.correct();
+        button.classList.add('correct');
+        button.innerHTML = `✓ ${selectedText}`;
+
+        // Disable other buttons
+        const allBtns = modalAnswersGrid.querySelectorAll('.answer-btn');
+        allBtns.forEach(b => {
+          if (b !== button) b.style.opacity = '0.5';
+          b.disabled = true;
+        });
+
+        // Add Points
+        if (!state.completedSet.has(card.id)) {
+          state.score += 10;
+          state.completedSet.add(card.id);
+          updateScoreDisplay();
+          spawnFloatingPoints(button, "+10 ⭐");
+        }
+
+        // Confetti Burst!
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 80,
+            spread: 90,
+            origin: { y: 0.6 }
+          });
+        }
+
+        // Voice Praise
+        const praiseList = [
+          `Правильно! ${card.answer}!`,
+          `Молодец! Именно ${card.answer}!`,
+          `Отлично! ${card.answer}!`
+        ];
+        const randomPraise = praiseList[Math.floor(Math.random() * praiseList.length)];
+        modalFeedback.textContent = `⭐ ${randomPraise}`;
+        modalFeedback.className = 'feedback-message correct-text';
+
+        // Kitten happy celebration reaction
+        state.kittyReaction = "happy";
+        state.kittyTimer = 100;
+        showKittySpeech(`Ура! ${card.answer}! ⭐`);
+
+        // Give answered image a smooth impulse and trigger full vanishing from the screen
+        if (bubbleObj) {
+          if (bubbleObj.body) {
+            bubbleObj.body.collisionFilter.mask = 0; // disable collision so other images pass freely
+            const impulseAngle = Math.random() * Math.PI * 2;
+            Body.setVelocity(bubbleObj.body, {
+              x: Math.cos(impulseAngle) * 3,
+              y: Math.sin(impulseAngle) * 3
+            });
+          }
+          // Make image completely vanish on correct answer
+          setTimeout(() => {
+            bubbleObj.isLeaving = true;
+          }, 350);
+        }
+
+        speakText(randomPraise);
+
+        // Smoothly close modal after 1.2 seconds
+        setTimeout(() => {
+          closeModal();
+          checkAllCompleted();
+        }, 1300);
+
+      } else {
+        // Incorrect Choice
+        Sound.wrong();
+        button.classList.add('wrong');
+
+        modalFeedback.textContent = `Попробуй ещё раз!`;
+        modalFeedback.className = 'feedback-message wrong-text';
+
+        speakText("Попробуй ещё раз!");
+
+        setTimeout(() => {
+          button.classList.remove('wrong');
+        }, 600);
+      }
+    }
+
+    function spawnFloatingPoints(targetElement, text) {
+      const rect = targetElement.getBoundingClientRect();
+      const popup = document.createElement('div');
+      popup.className = 'floating-points';
+      popup.textContent = text;
+      popup.style.left = `${rect.left + rect.width / 2 - 30}px`;
+      popup.style.top = `${rect.top}px`;
+      document.body.appendChild(popup);
+      setTimeout(() => popup.remove(), 1200);
+    }
+
+    function updateScoreDisplay() {
+      const scoreEl = document.getElementById('score-display');
+      const progEl = document.getElementById('progress-display');
+      scoreEl.textContent = state.score;
+      progEl.textContent = `${state.completedSet.size} / ${CARDS_DATA.length}`;
+
+      scoreEl.style.transform = 'scale(1.4)';
+      setTimeout(() => scoreEl.style.transform = 'scale(1)', 300);
+    }
+
+    function checkAllCompleted() {
+      if (state.completedSet.size >= CARDS_DATA.length) {
+        setTimeout(() => {
+          const winModal = document.getElementById('winModal');
+          winModal.classList.add('active');
+          Sound.correct();
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 150,
+              spread: 120,
+              origin: { y: 0.5 }
+            });
+          }
+          speakText("Поздравляю! Ты справился со всеми заданиями! Ты настоящий космический герой!");
+        }, 800);
+      }
+    }
+
+    /* ==========================================================================
+       11. CONTROLS: MODE, SHUFFLE, RESTART, HELP
+       ========================================================================== */
+    const btnShuffle = document.getElementById('btn-shuffle');
+    const btnHelp = document.getElementById('btn-help');
+    const helpModal = document.getElementById('helpModal');
+    const helpCloseBtn = document.getElementById('helpCloseBtn');
+    const btnRestart = document.getElementById('btnRestart');
+    const btnMode = document.getElementById('btn-mode');
+
+    if (btnMode) {
+      btnMode.onclick = () => {
+        state.viewMode = state.viewMode === 'all' ? 'batch' : 'all';
+        btnMode.textContent = state.viewMode === 'all' ? '🌌 Все 24 картинки' : '🌀 По 10 картинок';
+        createBubbles();
+        showKittySpeech(state.viewMode === 'all' ? "Ура! Все 24 картинки в космосе! 🚀" : "Режим очереди: по 10 картинок! ✨");
+      };
+    }
+
+    btnShuffle.onclick = () => {
+      Sound.whoosh();
+      const refImg = btnShuffle.querySelector('.refresh-icon');
+      if (refImg) {
+        refImg.classList.remove('spin-anim');
+        void refImg.offsetWidth;
+        refImg.classList.add('spin-anim');
+      }
+      createBubbles();
+      showKittySpeech("Вжух! Все пузыри перемешались! 🌀");
+    };
+
+    btnHelp.onclick = () => {
+      helpModal.classList.add('active');
+    };
+
+    helpCloseBtn.onclick = () => {
+      helpModal.classList.remove('active');
+    };
+
+    helpModal.onclick = (e) => {
+      if (e.target === helpModal) helpModal.classList.remove('active');
+    };
+
+    btnRestart.onclick = () => {
+      document.getElementById('winModal').classList.remove('active');
+      state.score = 0;
+      state.completedSet.clear();
+      updateScoreDisplay();
+      createBubbles();
+      showKittySpeech("Полетели снова! 🚀");
+    };
+
+    if (new URLSearchParams(window.location.search).has('previewModal')) {
+      setTimeout(() => {
+        if (state.bubbles.length > 0) openQuestionModal(state.bubbles[0]);
+      }, 400);
+    }
+
+    if (new URLSearchParams(window.location.search).has('previewHelp')) {
+      setTimeout(() => {
+        helpModal.classList.add('active');
+      }, 200);
+    }
+
+    /* ==========================================================================
+       12. WINDOW RESIZE HANDLER
+       ========================================================================== */
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      setupWalls();
+    });
+
+  })();
+  </script>
+</body>
+</html>
