@@ -1182,10 +1182,7 @@
       const img = new Image();
       const numStr = String(card.id).padStart(2, '0');
       const candidates = [
-        card.assetFile,
-        `zapi-img/${numStr}.png`,
-        `zapi-img/${numStr}.webp`,
-        `zapi-img/${numStr}.png`
+        card.assetFile
       ];
 
       let candidateIndex = 0;
